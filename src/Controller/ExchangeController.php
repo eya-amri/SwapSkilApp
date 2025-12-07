@@ -77,6 +77,8 @@ class ExchangeController extends AbstractController
 //            'notifications' => $notifications,
 //        ]);
 //    }
+// src/Controller/ExchangeController.php
+
     #[Route('/exchange/propose', name: 'exchange_propose')]
     public function propose(Request $request, EntityManagerInterface $em): Response
     {
@@ -90,10 +92,29 @@ class ExchangeController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            // Set additional fields automatically
-            $proposal->setRequester($this->getUser());
+            // Get the intended receiver (owner of the requested skill)
+            $receiver = $proposal->getRequestedSkill()->getOwner();
 
-            $proposal->setReceiver($proposal->getRequestedSkill()->getOwner());
+            // ***********************************************
+            // ✨ START: PREVENT SELF-PROPOSAL CHECK ✨
+            // ***********************************************
+
+            // Compare the current logged-in user with the owner of the requested skill
+            if ($this->getUser() === $receiver) {
+                $this->addFlash('danger', 'You cannot propose a skill exchange with yourself. Please select a skill owned by another user.');
+
+                // Redirect back to the propose form (or to a different page)
+                return $this->redirectToRoute('exchange_propose');
+            }
+
+            // ***********************************************
+            // ✨ END: PREVENT SELF-PROPOSAL CHECK ✨
+            // ***********************************************
+
+
+            // Set additional fields automatically (only runs if the check above passes)
+            $proposal->setRequester($this->getUser());
+            $proposal->setReceiver($receiver);
 
             $proposal->setStatus('pending');
             $proposal->setCreatedAt(new \DateTime());
@@ -105,8 +126,7 @@ class ExchangeController extends AbstractController
             // Flash message
             $this->addFlash('success', 'Your exchange proposal has been submitted.');
 
-            // Redirect (user dashboard or homepage)
-//            return $this->redirectToRoute('user_dashboard');
+            // Redirect
             return $this->redirectToRoute('listofproposals');
         }
 
@@ -114,4 +134,41 @@ class ExchangeController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+//    #[Route('/exchange/propose', name: 'exchange_propose')]
+//    public function propose(Request $request, EntityManagerInterface $em): Response
+//    {
+//        // Only logged-in users can propose
+//        $this->denyAccessUnlessGranted('ROLE_USER');
+//
+//        $proposal = new ExchangeProposal();
+//        $form = $this->createForm(ExchangeProposalType::class, $proposal);
+//
+//        $form->handleRequest($request);
+//
+//        if ($form->isSubmitted() && $form->isValid()) {
+//
+//            // Set additional fields automatically
+//            $proposal->setRequester($this->getUser());
+//
+//            $proposal->setReceiver($proposal->getRequestedSkill()->getOwner());
+//
+//
+//            $proposal->setStatus('pending');
+//            $proposal->setCreatedAt(new \DateTime());
+//
+//            // Save to database
+//            $em->persist($proposal);
+//            $em->flush();
+//
+//            // Flash message
+//            $this->addFlash('success', 'Your exchange proposal has been submitted.');
+//
+//            // Redirect (user dashboard or homepage)
+//            return $this->redirectToRoute('listofproposals');
+//        }
+//
+//        return $this->render('exchange/propose.html.twig', [
+//            'form' => $form->createView(),
+//        ]);
+//    }
 }
