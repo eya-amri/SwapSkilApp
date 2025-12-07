@@ -28,9 +28,16 @@ class Skill
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $availability = null;
 
-    #[ORM\ManyToOne(inversedBy: 'skills')]
-    #[ORM\JoinColumn(nullable: false)]
+
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "skills")]
+    #[ORM\JoinColumn(nullable: true)] // allow nulls
     private ?User $owner = null;
+
+
+//    #[ORM\ManyToOne(inversedBy: 'skills')]
+//    #[ORM\JoinColumn(nullable: false)]
+//    private ?User $owner = null;
+
 
     public function getId(): ?int
     {
@@ -115,4 +122,7 @@ class Skill
 
         return $this;
     }
+
+
+
 }

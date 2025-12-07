@@ -1,0 +1,174 @@
+<?php
+
+
+namespace App\Controller;
+
+use App\Entity\ExchangeProposal;
+use App\Entity\Notification;
+use App\Form\ExchangeProposalType;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+class ExchangeController extends AbstractController
+{
+    #[Route('/exchange/listofproposals', name: 'listofproposals')]
+    public function dashboard(EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+
+        // 1. Proposals YOU MADE (You are the Requester)
+        $madeProposals = $em->getRepository(ExchangeProposal::class)
+            ->createQueryBuilder('e')
+            ->where('e.requester = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult();
+
+        // 2. Proposals YOU RECEIVED (You are the Receiver)
+        $receivedProposals = $em->getRepository(ExchangeProposal::class)
+            ->createQueryBuilder('e')
+            ->where('e.receiver = :user') // *** CORRECTED LINE: Use the dedicated 'receiver' field ***
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult();
+
+        // Notifications
+        $notifications = $em->getRepository(Notification::class)
+            ->findBy(['user' => $user, 'isRead' => false], ['createdAt' => 'DESC']);
+
+        return $this->render('exchange/listofproposals.html.twig', [
+            'madeProposals' => $madeProposals,
+            'receivedProposals' => $receivedProposals,
+            'notifications' => $notifications,
+        ]);
+    }
+//    #[Route('/exchange/listofproposals', name: 'listofproposals')]
+//    public function dashboard(EntityManagerInterface $em): Response
+//    {
+//        $user = $this->getUser();
+//
+//        // Proposals where user is requester
+//        $madeProposals = $em->getRepository(ExchangeProposal::class)
+//            ->createQueryBuilder('e')
+//            ->where('e.requester = :user')
+//            ->setParameter('user', $user)
+//            ->getQuery()
+//            ->getResult();
+//
+//        // Proposals where user owns the offered skill
+//        $receivedProposals = $em->getRepository(ExchangeProposal::class)
+//            ->createQueryBuilder('e')
+//            ->join('e.offeredSkill', 's')
+//            ->where('s.owner = :user')
+//            ->setParameter('user', $user)
+//            ->getQuery()
+//            ->getResult();
+//
+//        // Notifications
+//        $notifications = $em->getRepository(Notification::class)
+//            ->findBy(['user' => $user, 'isRead' => false], ['createdAt' => 'DESC']);
+//
+//        return $this->render('exchange/listofproposals.html.twig', [
+//            'madeProposals' => $madeProposals,
+//            'receivedProposals' => $receivedProposals,
+//            'notifications' => $notifications,
+//        ]);
+//    }
+// src/Controller/ExchangeController.php
+
+    #[Route('/exchange/propose', name: 'exchange_propose')]
+    public function propose(Request $request, EntityManagerInterface $em): Response
+    {
+        // Only logged-in users can propose
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
+        $proposal = new ExchangeProposal();
+        $form = $this->createForm(ExchangeProposalType::class, $proposal);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            // Get the intended receiver (owner of the requested skill)
+            $receiver = $proposal->getRequestedSkill()->getOwner();
+
+            // ***********************************************
+            // ✨ START: PREVENT SELF-PROPOSAL CHECK ✨
+            // ***********************************************
+
+            // Compare the current logged-in user with the owner of the requested skill
+            if ($this->getUser() === $receiver) {
+                $this->addFlash('danger', 'You cannot propose a skill exchange with yourself. Please select a skill owned by another user.');
+
+                // Redirect back to the propose form (or to a different page)
+                return $this->redirectToRoute('exchange_propose');
+            }
+
+            // ***********************************************
+            // ✨ END: PREVENT SELF-PROPOSAL CHECK ✨
+            // ***********************************************
+
+
+            // Set additional fields automatically (only runs if the check above passes)
+            $proposal->setRequester($this->getUser());
+            $proposal->setReceiver($receiver);
+
+            $proposal->setStatus('pending');
+            $proposal->setCreatedAt(new \DateTime());
+
+            // Save to database
+            $em->persist($proposal);
+            $em->flush();
+
+            // Flash message
+            $this->addFlash('success', 'Your exchange proposal has been submitted.');
+
+            // Redirect
+            return $this->redirectToRoute('listofproposals');
+        }
+
+        return $this->render('exchange/propose.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+//    #[Route('/exchange/propose', name: 'exchange_propose')]
+//    public function propose(Request $request, EntityManagerInterface $em): Response
+//    {
+//        // Only logged-in users can propose
+//        $this->denyAccessUnlessGranted('ROLE_USER');
+//
+//        $proposal = new ExchangeProposal();
+//        $form = $this->createForm(ExchangeProposalType::class, $proposal);
+//
+//        $form->handleRequest($request);
+//
+//        if ($form->isSubmitted() && $form->isValid()) {
+//
+//            // Set additional fields automatically
+//            $proposal->setRequester($this->getUser());
+//
+//            $proposal->setReceiver($proposal->getRequestedSkill()->getOwner());
+//
+//
+//            $proposal->setStatus('pending');
+//            $proposal->setCreatedAt(new \DateTime());
+//
+//            // Save to database
+//            $em->persist($proposal);
+//            $em->flush();
+//
+//            // Flash message
+//            $this->addFlash('success', 'Your exchange proposal has been submitted.');
+//
+//            // Redirect (user dashboard or homepage)
+//            return $this->redirectToRoute('listofproposals');
+//        }
+//
+//        return $this->render('exchange/propose.html.twig', [
+//            'form' => $form->createView(),
+//        ]);
+//    }
+}

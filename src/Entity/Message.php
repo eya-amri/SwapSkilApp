@@ -32,6 +32,10 @@ class Message
     #[ORM\Column(nullable: true)]
     private ?\DateTime $createdAt = null;
 
+    #[ORM\ManyToOne(targetEntity: ExchangeProposal::class, inversedBy: "messages")]
+    #[ORM\JoinColumn(nullable: false)]
+    private $exchangeProposal;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -89,6 +93,18 @@ class Message
     public function setCreatedAt(?\DateTime $createdAt): static
     {
         $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getExchangeProposal(): ?ExchangeProposal
+    {
+        return $this->exchangeProposal;
+    }
+
+    public function setExchangeProposal(?ExchangeProposal $exchangeProposal): static
+    {
+        $this->exchangeProposal = $exchangeProposal;
+
         return $this;
     }
 }

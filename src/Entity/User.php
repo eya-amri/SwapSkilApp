@@ -43,17 +43,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?bool $status = null;
 
-    #[ORM\Column(type: Types::ARRAY, nullable: true)]
-    private ?array $offeredSkill = null;
-
-    #[ORM\Column(type: Types::ARRAY, nullable: true)]
-    private ?array $requestedSkill = null;
-
     #[ORM\Column(nullable: true)]
     private ?\DateTime $createdAt = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $googleId = null;
+
+//    // src/Entity/User.php
+//    #[ORM\OneToMany(mappedBy: "owner", targetEntity: Skill::class)]
+//    private Collection $skills;
+
 
     /**
      * @var Collection<int, Notification>
@@ -110,6 +109,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+
     public function __construct()
     {
         $this->notifications = new ArrayCollection();
@@ -120,6 +120,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->events = new ArrayCollection();
         $this->skills = new ArrayCollection();
     }
+
 
     public function getId(): ?int
     {
@@ -231,29 +232,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getOfferedSkill(): ?array
-    {
-        return $this->offeredSkill;
-    }
-
-    public function setOfferedSkill(?array $offeredSkill): static
-    {
-        $this->offeredSkill = $offeredSkill;
-
-        return $this;
-    }
-
-    public function getRequestedSkill(): ?array
-    {
-        return $this->requestedSkill;
-    }
-
-    public function setRequestedSkill(?array $requestedSkill): static
-    {
-        $this->requestedSkill = $requestedSkill;
-
-        return $this;
-    }
 
     public function getCreatedAt(): ?\DateTime
     {
@@ -286,6 +264,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // Clear temporary sensitive data if any
     }
+
+
+//    public function __construct()
+//    {
+//        $this->skills = new ArrayCollection();
+//    }
 
     /**
      * @return Collection<int, Notification>
