@@ -1,12 +1,13 @@
 <h2 class="browse-title">Compétences des autres utilisateurs</h2>
 
+
 <div class="browse-filters">
     <div class="search-container">
         <i class="bi bi-search search-icon"></i>
         <input type="text"
                name="q"
                value="{{ query }}"
-               placeholder="Rechercher une compétence, un utilisateur..."
+               placeholder="Rechercher une compétence..."
                class="search-input">
     </div>
 
@@ -36,7 +37,8 @@
             <div class="skill-card">
                 <div class="skill-card-header">
                     <div class="skill-title-container">
-                        <h3 class="skill-title">{{ skill.name }}</h3>
+                        <h3 class="skill-title">{{ skill.title }}</h3>
+
                         {% if skill.category %}
                             <span class="skill-category">{{ skill.category }}</span>
                         {% endif %}
@@ -51,12 +53,13 @@
 
                 <div class="skill-owner">
                     <div class="owner-avatar">
-                        {{ skill.owner.name|first|upper }}
+                        {{ skill.owner.username|first|upper }}
                     </div>
                     <div class="owner-info">
-                        <h4>{{ skill.owner
-                            .name }}</h4>
-                        <p class="owner-bio">{{ skill.owner.bio|default('Membre SwapSkill')|u.truncate(50, '...') }}</p>
+                        <h4>{{ skill.owner.username }}</h4>
+                        <p class="owner-bio">
+                            {{ skill.owner.bio|default('Membre SwapSkill')|u.truncate(50, '...') }}
+                        </p>
                     </div>
                 </div>
 
@@ -86,6 +89,7 @@
                         <i class="bi bi-arrow-left-right"></i>
                         Proposer un échange
                     </button>
+
                     <a href="#" class="action-btn secondary">
                         <i class="bi bi-eye"></i>
                         Voir détails
@@ -108,7 +112,7 @@
             {% endif %}
         </p>
         {% if query %}
-            <button class="reset-btn" onclick="window.location.href='{{ path('skill_browse') }}'">
+            <button class="reset-btn" onclick="window.location.href='{{ path('app_skill_all') }}'">
                 <i class="bi bi-x-circle"></i>
                 Réinitialiser la recherche
             </button>

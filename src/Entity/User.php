@@ -96,6 +96,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\OneToMany(targetEntity: Skill::class, mappedBy: 'owner')]
     private Collection $skills;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $photo = null;
+
+    public function getPhoto(): ?string
+    {
+        return $this->photo;
+    }
+
+    public function setPhoto(?string $photo): self
+    {
+        $this->photo = $photo;
+        return $this;
+    }
 
     public function __construct()
     {
